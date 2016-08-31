@@ -46,7 +46,7 @@ struct range_iter_base : std::iterator<std::input_iterator_tag, T> {
 
     DEVICE_CALLABLE
     bool operator !=(range_iter_base const& other) const {
-        return not (*this == other);
+        return !(*this == other);
     }
 
 protected:
@@ -92,7 +92,7 @@ struct range_proxy {
 
             DEVICE_CALLABLE
             bool operator !=(iter const& other) const {
-                return not (*this == other);
+                return !(*this == other);
             }
 
         private:
@@ -222,18 +222,14 @@ infinite_range_proxy<T> range(T begin) {
 
 namespace traits {
 
-template <typename C>
+template <typename T>
 struct has_size {
-    template <typename T>
-    static constexpr auto check(T*) ->
-        typename std::is_integral<
-            decltype(std::declval<T const>().size())>::type;
-
-    template <typename>
-    static constexpr auto check(...) -> std::false_type;
-
-    using type = decltype(check<C>(0));
-    static constexpr bool value = type::value;
+    typedef char Yes;
+    typedef Yes No[2];
+    template <typename U, U> struct really_has;
+    template <typename C> static Yes& Test(really_has <size_t (C::*)() const, &C::size>*);
+    template <typename> static No& Test(...);
+    static bool const value = sizeof(Test<T>(0)) == sizeof(Yes);
 };
 
 } // namespace traits
